@@ -39,9 +39,9 @@ questions = ["Give a brief explanation of how brain neuroplasticity works",
 
 logger.info('Setting constants...')
 client = get_weaviate_client()
-turbo = LLM(model_name='gpt-3.5-turbo-0125')
+turbo = LLM(model_name='gpt-4o-mini')
 collection_name = 'Huberman_minilm_128'
-arm, fm = AnswerRelevancyMetric(model='gpt-4', threshold=0.7), FaithfulnessMetric(model='gpt-4', threshold=0.7)
+arm, fm = AnswerRelevancyMetric(model='gpt-4o', threshold=0.7), FaithfulnessMetric(model='gpt-4', threshold=0.7)
 
 def get_answer_bundle(query: str,
                       client: WeaviateWCS,
@@ -57,14 +57,14 @@ def get_answer_bundle(query: str,
 
     #1st-stage retrieval (get contexts)
     context = client.hybrid_search(query, collection_name, 
-                                   query_properties=['content', 'title', 'short_description'],
+                                   query_properties=['content', 'title', 'summary'],
                                    limit=3, 
-                                   return_properties=['content', 'guest', 'short_description'])
+                                   return_properties=['content', 'guest', 'summary'])
     #create contexts from content field
     contexts = [d['content'] for d in context]
     
     #generate assistant message prompt
-    assist_message = generate_prompt_series(query, context, summary_key='short_description')
+    assist_message = generate_prompt_series(query, context, summary_key='summary')
 
     #generate answers from model being evaluated
     answer = format_llm_response(answer_llm.chat_completion(huberman_system_message, assist_message))
@@ -129,22 +129,22 @@ async def aget_answer_bundle( query: str,
 
     #1st-stage retrieval (get contexts)
     context = client.hybrid_search(query, collection_name, 
-                                   query_properties=['content', 'title', 'short_description'],
+                                   query_properties=['content', 'title', 'summary'],
                                    limit=3, 
-                                   return_properties=['content', 'guest', 'short_description'])
+                                   return_properties=['content', 'guest', 'summary'])
     #create contexts from content field
     contexts = [d['content'] for d in context]
     
     #generate assistant message prompt
-    assist_message = generate_prompt_series(query, context, summary_key='short_description')
+    assist_message = generate_prompt_series(query, context, summary_key='summary')
 
     #generate answers from model being evaluated
-    answer = await answer_llm.achat_completion(huberman_system_prompt, assist_message)
+    answer = await answer_llm.achat_completion(huberman_system_message, assist_message)
     answer = format_llm_response(answer)
 
     #create ground truth answers
     if ground_truth_llm:
-        ground_truth = format_llm_response(ground_truth_llm.chat_completion(huberman_system_prompt, assist_message))
+        ground_truth = format_llm_response(ground_truth_llm.chat_completion(huberman_system_message, assist_message))
         return query, contexts, answer, ground_truth
     return query, contexts, answer
 
@@ -186,7 +186,3 @@ except Exception:
         for line in evaluation:
             _metrics = line.metrics[0].__dict__
             f.write(f'{_metrics}\n')
-
-
-
-
