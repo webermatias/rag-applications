@@ -534,3 +534,106 @@ class RetrievalEvaluationService:
             for k, v in param_options.items():
                 setattr(results, k, v)
 
+
+def calc_hit_rate_scores(results_dict: dict[str, str | int], 
+                         search_type: Literal['kw', 'vector', 'hybrid', 'all']=['all']
+                         ) -> None:
+    '''
+    Helper function to calculate hit rate scores
+    '''
+    accepted_search_types = ['kw', 'vector', 'hybrid']
+    _check_search_type_param(search_type)
+    search_type = ['kw', 'vector', 'hybrid'] if search_type == ['all'] else search_type
+    for prefix in search_type:
+        if prefix in accepted_search_types:
+            results_dict[f'{prefix}_hit_rate'] = round(results_dict[f'{prefix}_hit_rate']/results_dict['total_questions'],2)
+
+def calc_mrr_scores(results_dict: dict[str, str | int],
+                    search_type: Literal['kw', 'vector', 'hybrid', 'all']=['all']
+                    ) -> None:
+    '''
+    Helper function to calculate mrr scores
+    '''
+    accepted_search_types = ['kw', 'vector', 'hybrid']
+    _check_search_type_param(search_type)
+    search_type = accepted_search_types if search_type == ['all'] else search_type
+    for prefix in search_type:
+        if prefix in accepted_search_types:
+            results_dict[f'{prefix}_mrr'] = round(results_dict[f'{prefix}_mrr']/results_dict['total_questions'],2)
+
+def create_dir(dir_path: str) -> None:
+    '''
+    Checks if directory exists, and creates new directory
+    if it does not exist
+    '''
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+def record_results(results_dict: dict[str, str | int], 
+                   chunk_size: int, 
+                   dir_outpath: str='./eval_results',
+                   as_text: bool=False
+                   ) -> None:
+    '''
+    Write results to output file in either txt or json format
+
+    Args:
+    -----
+    results_dict: dict[str, str | int]
+        Dictionary containing results of evaluation
+    chunk_size: int
+        Size of text chunks in tokens
+    dir_outpath: str
+        Path to output directory.  Directory only, filename is hardcoded
+        as part of this function.
+    as_text: bool
+        If True, write results as text file.  If False, write as json file.
+    '''
+    create_dir(dir_outpath)
+    time_marker = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    ext = 'txt' if as_text else 'json'
+    path = os.path.join(dir_outpath, f'retrieval_eval_{chunk_size}_{time_marker}.{ext}')
+    if as_text:
+        with open(path, 'a') as f:
+            f.write(f"{results_dict}\n")
+    else: 
+        with open(path, 'w') as f:
+            json.dump(results_dict, f, indent=4)
+
+def get_doc_ids(search_mode: str, 
+                retriever: WeaviateWCS,
+                query: str, 
+                collection_name: str, 
+                reranker: ReRanker, 
+                return_properties: list[str], 
+                retrieve_limit: int,
+                top_k: int,
+                alpha: float=None,
+                query_properties: list[str]=None
+                ) -> list[str]:
+    if search_mode == 'hybrid':
+        response = retriever.hybrid_search(request=query, collection_name=collection_name, query_properties=query_properties, 
+                                           alpha=alpha,limit=retrieve_limit,return_properties=return_properties)  
+    elif search_mode == 'kw':
+        response = retriever.keyword_search(request=query, collection_name=collection_name, query_properties=query_properties, 
+                                            limit=retrieve_limit, return_properties=return_properties)
+    elif search_mode == 'vector':
+        response = retriever.vector_search(request=query, collection_name=collection_name, limit=retrieve_limit, 
+                                           return_properties=return_properties)  
+    if reranker:
+        response = reranker.rerank(response, query, top_k=top_k)
+    doc_ids = {result['doc_id']:i for i, result in enumerate(response[:top_k], 1)}
+    return doc_ids, response
+
+def _check_search_type_param(search_type: list) -> None:
+    accepted_search_types = ['kw', 'vector', 'hybrid', 'all']
+    if not isinstance(search_type, list):
+        raise ValueError(f'search_type must be a list, received a {type(search_type)}')
+    if not any(search_type):
+        raise ValueError(f'search_type must contain at least one search type from {accepted_search_types}')
+    count = 0
+    for search_type_ in search_type:
+        if search_type_ in accepted_search_types:
+            count += 1
+    if count == 0:
+        raise ValueError(f'Please use one of {accepted_search_types}. Received {search_type}')
