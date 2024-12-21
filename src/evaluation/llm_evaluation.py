@@ -237,7 +237,7 @@ def load_eval_response(metric: BaseMetric | AnswerCorrectnessMetric,
     if isinstance(test_case, TestResult) and isinstance(metric, list):
         if len(metric) > 1:
             raise NotImplementedError("Multiple metrics not supported yet for this loading function")
-        metric = metric[0]
+    metric = metric[0]
     return EvalResponse(score=metric.score,
                         reason=metric.reason,
                         metric=metric.__class__.__name__,
