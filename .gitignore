@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 .deepeval*
 .Trash-*
-
+*.DS_Store
 # C extensions
 *.so
 
@@ -14,7 +14,7 @@ eval_results/
 data/raw/
 data/videos/
 data/*.parquet
-answer_key
+# answer_key
 notebooks/videos
 notebooks/transcripts
 notebooks/data_ingest/videos
