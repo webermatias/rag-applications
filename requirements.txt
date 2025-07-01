@@ -665,7 +665,7 @@ sentence-transformers==3.2.1
     # via rag-applications (pyproject.toml)
 sentry-sdk==2.19.0
     # via deepeval
-setuptools==75.3.0
+setuptools==78.1.1
     # via
     #   grpcio-tools
     #   jupyterlab
