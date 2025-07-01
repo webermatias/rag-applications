@@ -183,7 +183,7 @@ grpcio-health-checking==1.62.3
     # via weaviate-client
 grpcio-tools==1.62.3
     # via weaviate-client
-h11==0.14.0
+h11==0.16.0
     # via httpcore
 httpcore==1.0.6
     # via httpx
@@ -496,7 +496,7 @@ propcache==0.2.0
     # via
     #   aiohttp
     #   yarl
-protobuf==4.25.5
+protobuf==4.25.8
     # via
     #   deepeval
     #   googleapis-common-protos
