@@ -453,8 +453,6 @@ class WeaviateIndexer:
             Name of the property that contains the vector representation of the document.
         unique_id_field: str='doc_id'
             Name of the unique identifier field in the document.
-        properties: list[Property]=None
-            List of properties to create the collection with. Required if collection does not exist.
         collection_description: str=None
             Description of the collection. Optional parameter.
 
