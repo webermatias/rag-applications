@@ -15,14 +15,14 @@ class ReRanker(CrossEncoder):
     '''
 
     def __init__(self, 
-                 model_name: str='cross-encoder/ms-marco-MiniLM-L-6-v2',
+                 model_name_or_path: str='cross-encoder/ms-marco-MiniLM-L-6-v2',
                  **kwargs
                  ):
-        super().__init__(model_name=model_name, 
+        super().__init__(model_name_or_path=model_name_or_path, 
                          **kwargs) 
-        self.model_name = model_name
+        self.model_name_or_path = model_name_or_path
         self.score_field = 'cross_score'
-        self.activation_fct = Sigmoid()
+        self.activation_fn = Sigmoid()
 
     def _cross_encoder_score(self, 
                              results: list[dict], 
@@ -37,11 +37,11 @@ class ReRanker(CrossEncoder):
             2. Adds cross-score key to results dictionary. 
             3. If desired returns np.array of Cross Encoder scores.
         '''
-        activation_fct = self.activation_fct if apply_sigmoid else None
+        activation_fn = self.activation_fn if apply_sigmoid else None
         #build query/content list
         cross_inp = [[query, hit[hit_field]] for hit in results]
         #get scores
-        cross_scores = self.predict(cross_inp, activation_fct=activation_fct)
+        cross_scores = self.predict(cross_inp, activation_fn=activation_fn)
         for i, result in enumerate(results):
             result[self.score_field]=cross_scores[i]
 
